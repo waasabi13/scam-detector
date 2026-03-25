@@ -1,0 +1,19 @@
+# Django и DRF
+Django>=4.0,<5.0
+djangorestframework>=3.14
+django-cors-headers>=3.14
+
+# Асинхронные WebSocket'ы
+channels>=4.0
+channels_redis>=4.1
+
+# HuggingFace Transformers и PyTorch
+transformers==4.39.3
+torch>=2.1.0
+tokenizers>=0.15.0
+
+# WSGI/ASGI сервер
+gunicorn>=21.2.0
+
+
+daphne>=4.0.0
