@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Virtual env
+venv/
+.env
+
+# Django
+*.log
+
+# Node.js
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+
+# ML models and checkpoints
+backend/detector/model/
+dataset/
+*.bin
+*.pt
+*.pth
+*.ckpt
+
+# Hugging Face / training cache
+.cache/
+hf_cache/
