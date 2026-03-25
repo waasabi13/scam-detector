@@ -1,0 +1,574 @@
+.chat-container {
+  display: flex;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f7f8fa;
+  color: #333;
+}
+
+/* ─────────────── Бургер-меню как оверлей ─────────────── */
+
+.burger-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  z-index: 999;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.burger-panel {
+  width: 260px;
+  background: white;
+  height: 100%;
+  padding: 1.2rem;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+  border-radius: 0 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.burger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.burger-menu-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.burger-menu-list li {
+  cursor: pointer;
+  font-size: 1rem;
+  color: #007aff;
+  transition: color 0.2s;
+}
+
+.burger-menu-list li:hover {
+  text-decoration: underline;
+}
+
+.burger-menu-list li.active {
+  font-weight: 600;
+  color: #005bcc;
+}
+
+/* ─────────────── Основной интерфейс ─────────────── */
+
+.main-content {
+  flex: 1;
+  display: flex;
+}
+
+.user-list-panel {
+  width: 260px;
+  border-right: 1px solid #e0e0e0;
+  padding: 1rem;
+  background: #fff;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.02);
+}
+
+
+
+.search-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.search-input:focus {
+  border-color: #007aff;
+}
+
+.chat-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.chat-list li {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.chat-list li:hover {
+  background-color: #f0f4ff;
+}
+
+.chat-list li.active {
+  background-color: #007aff;
+  color: white;
+  font-weight: 500;
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: #555;
+  margin-right: 10px;
+}
+
+.chat-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: #555;
+}
+
+
+.chat-placeholder {
+  color: #bbb;
+  font-size: 0.9rem;
+  padding: 0.8rem;
+  text-align: center;
+  background: none;
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ─────────────── Панель чата ─────────────── */
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.chat-actions {
+  position: relative;
+}
+
+.chat-actions button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.dropdown {
+  position: absolute;
+  top: 2rem;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.dropdown button {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+}
+
+.dropdown button:hover {
+  background-color: #f0f0f0;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.message {
+  max-width: 40%;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  word-break: break-word;
+  font-size: 0.95rem;
+}
+.message .meta {
+  font-size: 0.75rem;
+  color: #888;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.message .status {
+  color: #007aff;
+}
+
+.mine {
+  background-color: #daf0ff;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.theirs {
+  background-color: #f1f1f1;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.message-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 0.8rem;
+}
+
+.message-input input {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.message-input button {
+  padding: 0.6rem 1.2rem;
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.message-input button:hover {
+  background-color: #005bcc;
+}
+
+/* ─────────────── Поиск людей ─────────────── */
+
+.user-results-widget {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  transition: all 0.2s ease;
+}
+
+.user-entry {
+  padding: 0.5rem 0.8rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.user-entry:hover {
+  background-color: #f0f4ff;
+}
+
+.user-entry.active {
+  background-color: #007aff;
+  color: white;
+}
+
+.display-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.username {
+  font-size: 0.8rem;
+  color: #888;
+}
+/* Добавить в chat.css */
+
+/* ─────────────── Нижняя панель профиля ─────────────── */
+
+.profile-bar {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.profile-bar:hover {
+  background: #f4f4f4;
+}
+
+.profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.profile-info .display-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.profile-info .username {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 16px;
+  margin-right: 0.8rem;
+  flex-shrink: 0;
+}
+
+.chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ─────────────── Виджет меню поверх ─────────────── */
+
+.profile-menu {
+  position: fixed;
+  bottom: 5rem;
+  left: 1rem;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.2rem;
+  z-index: 1000;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.profile-menu button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.95rem;
+  color: #007aff;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.profile-menu button:hover {
+  text-decoration: underline;
+}
+
+/* Удаляем старую иконку бургер-меню */
+.burger-toggle {
+  display: none !important;
+}
+/* ─────────────── Детектор ─────────────── */
+.fraud-alert {
+  background: #ffeaea;
+  color: #b30000;
+  padding: 12px 16px;
+  border-left: 5px solid #cc0000;
+  margin-bottom: 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  position: relative;
+  animation: slide-in 0.3s ease-out;
+}
+
+.fraud-alert {
+  background-color: #ffe6e6;
+  border-left: 4px solid red;
+  padding: 12px;
+  margin: 10px;
+  font-weight: 500;
+  color: #a00000;
+  position: relative;
+  border-radius: 5px;
+}
+.fraud-alert .close-alert {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  cursor: pointer;
+  color: #a00000;
+}
+
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-actions {
+  position: relative;
+}
+
+.chat-actions button {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: 25px;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  padding: 5px 0;
+  min-width: 150px;
+}
+
+.dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown button:hover {
+  background-color: #f5f5f5;
+}
+
+
+.timestamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #444;
+}
+
+.time {
+  line-height: 1;
+}
+
+.msg-check {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}

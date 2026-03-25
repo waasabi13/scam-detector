@@ -1,0 +1,14 @@
+/* Убираем лишний скролл */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* <--- убирает вертикальный и горизонтальный скролл */
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f7f8fa;
+}
