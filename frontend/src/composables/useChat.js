@@ -1,8 +1,9 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useToast } from './useToast'
+import { useWebSocket } from './useWebSocket'
 import axios from '../api/axios'
 
 export function useChat() {
-  let socket = null
 
   const search = ref('')
   const searchResults = ref([])
@@ -20,6 +21,9 @@ export function useChat() {
   const fraudFlags = ref({})
   const showFraudAlert = ref(false)
 
+  const { toast, showToast } = useToast()
+  const { connect, send, disconnect } = useWebSocket()
+
   const messageMenu = ref({
     visible: false,
     x: 0,
@@ -27,10 +31,6 @@ export function useChat() {
     message: null
   })
 
-  const toast = ref({
-    visible: false,
-    text: ''
-  })
 
   const currentUser = ref({
     username: localStorage.getItem('username') || 'user',
@@ -48,14 +48,38 @@ export function useChat() {
   }
 
   const connectWebSocket = () => {
-    if (!selectedUser.value || !currentUser.value.id) return
+      if (!selectedUser.value || !currentUser.value.id) return
 
-    if (socket) {
-      socket.onclose = null
-      socket.close()
-      socket = null
+      connect({
+        currentUserId: currentUser.value.id,
+        selectedUserId: selectedUser.value.id,
+        onMessage: handleSocketMessage
+      })
     }
+    const handleSocketMessage = async (data) => {
+  const isIncoming = data.sender !== currentUser.value.username
+  const messageId = data.id || Date.now()
 
+  messages.value.push({
+    id: messageId,
+    text: data.message,
+    isMine: !isIncoming,
+    timestamp: new Date().toISOString(),
+    is_fraud: data.is_fraud && isIncoming
+  })
+
+  if (data.is_fraud === true && isIncoming) {
+    const hiddenAlerts = JSON.parse(localStorage.getItem('hiddenFraudAlerts') || '{}')
+
+    if (!hiddenAlerts[messageId]) {
+      showFraudAlert.value = true
+    }
+  }
+
+  await nextTick()
+  scrollToBottom()
+  await loadDialogs()
+}
     const ids = [currentUser.value.id, selectedUser.value.id].sort((a, b) => a - b)
     const roomName = `${ids[0]}_${ids[1]}`
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -114,10 +138,11 @@ export function useChat() {
     }
   }
 
-  const sendWebSocketMessage = (text) => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket не подключен или закрыт')
-      return
+    const sendWebSocketMessage = (text) => {
+      send({
+        message: text,
+        sender: currentUser.value.username
+      })
     }
 
     socket.send(JSON.stringify({
@@ -222,16 +247,6 @@ export function useChat() {
     }
   }
 
-  const showToast = (text) => {
-    toast.value.text = text
-    toast.value.visible = true
-
-    setTimeout(() => {
-      toast.value.visible = false
-      toast.value.text = ''
-    }, 2500)
-  }
-
   const sendVoiceStub = () => {
     showToast('Голосовое сообщение подготовлено к отправке')
   }
@@ -325,10 +340,7 @@ export function useChat() {
     document.removeEventListener('click', handleClickOutside)
     stopPolling()
 
-    if (socket) {
-      socket.close()
-      socket = null
-    }
+   disconnect()
   })
 
   return {
