@@ -14,7 +14,7 @@ urlpatterns = [
     path('api/chats/', chat_views.get_dialogs),
     path('api/messages/<int:user_id>/send/', chat_views.send_message),
     path('api/messages/<int:user_id>/', chat_views.get_messages),
-
+    path('api/messages/<int:message_id>/report/', chat_views.report_message),
     path('api/classify/', detector_views.classify_message),
 ]
 

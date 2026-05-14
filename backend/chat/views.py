@@ -62,15 +62,32 @@ def chat_partners(request):
 @permission_classes([IsAuthenticated])
 def get_dialogs(request):
     user = request.user
-    sent = Message.objects.filter(sender=user).values_list('recipient', flat=True)
-    received = Message.objects.filter(recipient=user).values_list('sender', flat=True)
-    user_ids = set(sent) | set(received)
 
-    users = CustomUser.objects.filter(id__in=user_ids)
-    return Response([
-        {'id': u.id, 'username': u.username, 'display_name': u.display_name}
-        for u in users
-    ])
+    messages = Message.objects.filter(
+        Q(sender=user) | Q(recipient=user)
+    ).order_by('-timestamp')
+
+    dialogs = {}
+
+    for msg in messages:
+        other_user = msg.recipient if msg.sender == user else msg.sender
+
+        if other_user.id not in dialogs:
+            unread_count = Message.objects.filter(
+                sender=other_user,
+                recipient=user,
+                is_read=False
+            ).count()
+
+            dialogs[other_user.id] = {
+                'id': other_user.id,
+                'username': other_user.username,
+                'display_name': other_user.display_name,
+                'last_message_time': msg.timestamp,
+                'unread_count': unread_count,
+            }
+
+    return Response(list(dialogs.values()))
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -114,10 +131,7 @@ def report_message(request, message_id):
 
     FraudReport.objects.create(
         message=message,
-        reported_by=request.user,
-        comment=request.data.get('comment', '')
+        reported_by=request.user
     )
 
     return Response({'status': 'reported'})
-
-

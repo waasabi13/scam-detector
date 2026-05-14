@@ -609,3 +609,33 @@
   font-size: 14px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
+
+.user-text {
+  flex: 1;
+}
+
+.display-name.unread {
+  font-weight: 700;
+}
+
+.unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4f46e5;
+  margin-left: auto;
+}
+
+.voice-button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #f1f1f1;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.voice-button:hover {
+  background: #e5e5e5;
+}
