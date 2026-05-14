@@ -2,11 +2,11 @@ import time
 from backend.detector.fraud_detector import FraudDetector
 
 # Инициализация детектора
-fraud_detector = FraudDetector(model_path="backend/detector/model/distilbert_model",
-                               tokenizer_path="backend/detector/model/tokenizer")
+model_path="model/distilbert_model"
+fraud_detector = FraudDetector(model_path)
 
 # Сообщение для проверки
-message = "Срочная информация! Ваш номер участвует в розыгрыше миллиона рублей: lucky-number.ru."
+message = "Срочно переведи деньги мне на карту, или я напишу заявление!"
 
 # Замер времени
 start_time = time.time()

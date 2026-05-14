@@ -88,12 +88,14 @@
               </div>
             </div>
           </div>
-
+            <div v-if="toast.visible" class="top-toast">
+              {{ toast.text }}
+            </div>
           <!-- Уведомление о мошенничестве -->
           <div v-if="showFraudAlert" class="fraud-alert">
             ⚠️ <strong>Внимание!</strong> Этот пользователь подозревается в мошенничестве.
             Не сообщайте личные данные и не переходите по ссылкам.
-            <button class="close-alert" @click="showFraudAlert = false">✖</button>
+            <button class="close-alert" @click="hideFraudAlert">✖</button>
           </div>
 
           <div class="messages" ref="messagesContainer">
@@ -101,6 +103,7 @@
               v-for="msg in messages"
               :key="msg.id"
               :class="['message', msg.isMine ? 'mine' : 'theirs']"
+              @contextmenu.prevent="openMessageMenu($event, msg)"
             >
               <div>{{ msg.text }}</div>
               <div class="timestamp">
@@ -126,7 +129,13 @@
               </div>
             </div>
           </div>
-
+          <div
+              v-if="messageMenu.visible"
+              class="message-context-menu"
+              :style="{ top: messageMenu.y + 'px', left: messageMenu.x + 'px' }"
+            >
+              <button @click="reportMessage">Пожаловаться на сообщение</button>
+            </div>
           <form @submit.prevent="sendMessage" class="message-input">
             <input v-model="newMessage" placeholder="Введите сообщение..." required />
             <button type="submit">Отправить</button>
@@ -186,23 +195,35 @@ const connectWebSocket = () => {
 
   socket.onopen = () => console.log('✅ WebSocket открыт:', wsUrl)
 
-  socket.onmessage = async (event) => {
-    const data = JSON.parse(event.data)
-    console.log('Пришло сообщение по WebSocket:', data)
+socket.onmessage = async (event) => {
+  const data = JSON.parse(event.data)
+  console.log('Пришло сообщение по WebSocket:', data)
+
+  const isIncoming = data.sender !== currentUser.value.username
+  const userId = selectedUser.value?.id
+
+    const messageId = data.id || Date.now()
+
     messages.value.push({
+      id: messageId,
       text: data.message,
-      isMine: data.sender === currentUser.value.username,
+      isMine: !isIncoming,
       timestamp: new Date().toISOString(),
+      is_fraud: data.is_fraud && isIncoming
     })
 
-    if (data.is_fraud && selectedUser.value?.id === selectedUser.value?.id) {
-        fraudFlags.value[selectedUser.value.id] = true
+    if (data.is_fraud && isIncoming && userId) {
+      const hiddenAlerts = JSON.parse(localStorage.getItem('hiddenFraudAlerts') || '{}')
+
+      if (!hiddenAlerts[messageId]) {
         showFraudAlert.value = true
       }
-    await nextTick()
-    scrollToBottom()
-    await loadDialogs()
-  }
+    }
+
+  await nextTick()
+  scrollToBottom()
+  await loadDialogs()
+}
 
   socket.onclose = () => {
     console.warn('⚠️ WebSocket закрыт, пробуем переподключиться...')
@@ -260,16 +281,15 @@ const fetchMessages = async (force = false) => {
       ...msg,
       isMine: msg.sender === currentUser.value.username
     }))
-    checkForFraudMessages(res.data, force)
-    await loadDialogs()
+const checkForFraudMessages = (msgs) => {
+  const hiddenAlerts = JSON.parse(localStorage.getItem('hiddenFraudAlerts') || '{}')
 
-    await nextTick()
-    scrollToBottom()
-  } catch (err) {
-    console.error('Ошибка загрузки сообщений', err)
-  }
+  const hasVisibleFraud = msgs.some(msg => {
+    return msg.is_fraud && !hiddenAlerts[msg.id]
+  })
+
+  showFraudAlert.value = hasVisibleFraud
 }
-
 const searchUsers = async () => {
   if (!search.value.trim()) {
     searchResults.value = []
@@ -282,11 +302,48 @@ const searchUsers = async () => {
     console.error('Ошибка поиска пользователей', err)
   }
 }
+const messageMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  message: null
+})
 
+const toast = ref({
+  visible: false,
+  text: ''
+})
+const openMessageMenu = (event, msg) => {
+  messageMenu.value = {
+    visible: true,
+    x: event.clientX,
+    y: event.clientY,
+    message: msg
+  }
+}
+
+const closeMessageMenu = () => {
+  messageMenu.value.visible = false
+  messageMenu.value.message = null
+}
+
+const showToast = (text) => {
+  toast.value.text = text
+  toast.value.visible = true
+
+  setTimeout(() => {
+    toast.value.visible = false
+    toast.value.text = ''
+  }, 2500)
+}
+
+const reportMessage = () => {
+  closeMessageMenu()
+  showToast('Ваше замечание учтено')
+}
 const selectUser = (user) => {
   selectedUser.value = user
   dropdownOpen.value = false
-  showFraudAlert.value = fraudFlags.value[user.id] || false
   fetchMessages(true)
   connectWebSocket()
 }
@@ -295,16 +352,22 @@ const checkForFraudMessages = (msgs, force = false) => {
   const userId = selectedUser.value?.id
   if (!userId) return
 
+  const hiddenAlerts = JSON.parse(localStorage.getItem('hiddenFraudAlerts') || '{}')
+  const isHidden = hiddenAlerts[userId]
+
   const alreadyDetected = fraudFlags.value[userId]
   const hasFraud = msgs.some(m => m.is_fraud)
 
   if (hasFraud && !alreadyDetected) {
     fraudFlags.value[userId] = true
+  }
+
+  if ((hasFraud || fraudFlags.value[userId]) && !isHidden) {
     showFraudAlert.value = true
   }
 
   if (force) {
-    showFraudAlert.value = fraudFlags.value[userId] || false
+    showFraudAlert.value = (fraudFlags.value[userId] || hasFraud) && !isHidden
   }
 }
 
@@ -350,10 +413,24 @@ const stopPolling = () => {
   }
 }
 
+const hideFraudAlert = () => {
+  const hiddenAlerts = JSON.parse(localStorage.getItem('hiddenFraudAlerts') || '{}')
+
+  messages.value.forEach(msg => {
+    if (msg.is_fraud) {
+      hiddenAlerts[msg.id] = true
+    }
+  })
+
+  localStorage.setItem('hiddenFraudAlerts', JSON.stringify(hiddenAlerts))
+  showFraudAlert.value = false
+}
+
 const blockUser = () => alert('(заглушка)')
 const clearChat = () => (messages.value = [])
 
 const handleClickOutside = (e) => {
+  closeMessageMenu()
   if (searchInputRef.value && !searchInputRef.value.contains(e.target)) {
     search.value = ''
     searchResults.value = []

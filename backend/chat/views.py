@@ -2,10 +2,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Message
+from .models import Message, FraudReport
 from users.models import CustomUser
 from django.db.models import Q
+from detector.fraud_detector import FraudDetector
 
+fraud_detector = FraudDetector()
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -16,10 +18,15 @@ def send_message(request, user_id):
 
     recipient = get_object_or_404(CustomUser, id=user_id)
 
+    label, confidence = fraud_detector.classify_message(text)
+    is_fraud = label.lower().startswith("мошенничество")
+
     message = Message.objects.create(
         sender=request.user,
         recipient=recipient,
-        text=text
+        text=text,
+        is_fraud=is_fraud,
+        fraud_confidence=confidence
     )
 
     return Response({
@@ -65,10 +72,6 @@ def get_dialogs(request):
         for u in users
     ])
 
-from detector.fraud_detector import FraudDetector
-
-fraud_detector = FraudDetector()
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_messages(request, user_id):
@@ -88,28 +91,33 @@ def get_messages(request, user_id):
 
     response = []
     for m in messages:
-        fraud_info = {}
-        if m.sender != request.user:
-            label, confidence = fraud_detector.classify_message(m.text)
-            if label.lower().startswith("мошенничество"):
-                fraud_info = {
-                    'is_fraud': True,
-                    'fraud_label': label,
-                    'fraud_confidence': round(confidence, 2)
-                }
 
         response.append({
             'id': m.id,
             'text': m.text,
             'timestamp': m.timestamp,
-            'sender': m.sender.username,  # теперь только sender
+            'sender': m.sender.username,
             'isRead': m.is_read,
-            **fraud_info
+            'is_fraud': m.is_fraud if m.recipient  != request.user else False,
+            'fraud_confidence': m.fraud_confidence if m.sender != request.user else None
         })
 
     return Response(response)
 
 
+from .models import Message, FraudReport
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def report_message(request, message_id):
+    message = get_object_or_404(Message, id=message_id)
+
+    FraudReport.objects.create(
+        message=message,
+        reported_by=request.user,
+        comment=request.data.get('comment', '')
+    )
+
+    return Response({'status': 'reported'})
 
 

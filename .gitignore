@@ -36,3 +36,4 @@ dataset/
 # Hugging Face / training cache
 .cache/
 hf_cache/
+/backend/chat/migrations/0004_message_fraud_confidence_message_is_fraud.py

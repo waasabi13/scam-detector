@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['77.105.139.229', 'localhost', '127.0.0.1', 'kekdev.top']
 # Application definition
 
 INSTALLED_APPS = [
-    #'django.contrib.admin',
+    'django.contrib.admin',
     'channels',
     'django.contrib.auth',
     'django.contrib.contenttypes',

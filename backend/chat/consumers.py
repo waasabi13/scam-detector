@@ -1,5 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from detector.fraud_detector import FraudDetector
+fraud_detector = FraudDetector()
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -23,19 +26,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get('message')
-        sender = data.get("sender", "Anonymous")  # ⚠️ берем из данных, а не из self.scope['user']
+        sender = data.get("sender", "Anonymous")
+        label, confidence = fraud_detector.classify_message(message)
+        is_fraud = label.lower().startswith("мошенничество")
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
                 'message': message,
-                'sender': sender
+                'sender': sender,
+                'is_fraud': is_fraud
             }
         )
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'message': event['message'],
-            'sender': event['sender']
+            'sender': event['sender'],
+            'is_fraud': event.get('is_fraud', False)
         }))
