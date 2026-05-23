@@ -6,7 +6,7 @@ model_path="model/distilbert_model"
 fraud_detector = FraudDetector(model_path)
 
 # Сообщение для проверки
-message = "Срочно переведи деньги мне на карту, или я напишу заявление!"
+message = "раз два три раз два три"
 
 # Замер времени
 start_time = time.time()

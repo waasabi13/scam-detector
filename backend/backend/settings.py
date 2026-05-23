@@ -45,8 +45,11 @@ INSTALLED_APPS = [
     'chat',
     'detector',
     'rest_framework.authtoken',
+
 ]
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 ASGI_APPLICATION = 'backend.asgi.application'
 
 CHANNEL_LAYERS = {

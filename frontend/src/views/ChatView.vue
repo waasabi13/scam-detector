@@ -24,6 +24,7 @@
             <div class="avatar" :style="{ backgroundColor: getColor(user.username) }">
               {{ user.display_name?.charAt(0).toUpperCase() || 'U' }}
             </div>
+
             <div>
               <div class="display-name">{{ user.display_name || user.username }}</div>
               <div class="username">@{{ user.username }}</div>
@@ -35,7 +36,10 @@
           <li
             v-for="user in chatUsers"
             :key="user.id"
-            :class="{ active: selectedUser?.id === user.id }"
+            :class="{
+              active: selectedUser?.id === user.id,
+              unread: user.unread_count > 0
+            }"
             @click="selectUser(user)"
           >
             <div class="avatar" :style="{ backgroundColor: getColor(user.username) }">
@@ -84,6 +88,7 @@
 
             <div class="chat-actions">
               <button @click="toggleDropdown">⋯</button>
+
               <div v-if="dropdownOpen" class="dropdown">
                 <button @click="blockUser">Заблокировать</button>
                 <button @click="clearChat">Очистить чат</button>
@@ -108,7 +113,35 @@
               :class="['message', msg.isMine ? 'mine' : 'theirs']"
               @contextmenu.prevent="openMessageMenu($event, msg)"
             >
-              <div>{{ msg.text }}</div>
+              <div v-if="msg.message_type === 'voice'" class="voice-message">
+                <audio :src="msg.audio_url" controls></audio>
+
+                <button
+                  class="check-voice-button"
+                  @click="checkVoiceMessage(msg)"
+                >
+                  Проверить
+                </button>
+
+                <button
+                  v-if="msg.transcript"
+                  class="transcript-toggle"
+                  @click="toggleTranscript(msg)"
+                >
+                  {{ msg.showTranscript ? 'Скрыть расшифровку' : 'Показать расшифровку' }}
+                </button>
+
+                <div
+                  v-if="msg.transcript && msg.showTranscript"
+                  class="voice-transcript-box"
+                >
+                  {{ msg.transcript }}
+                </div>
+              </div>
+
+              <div v-else>
+                {{ msg.text }}
+              </div>
 
               <div class="timestamp">
                 <span class="time">{{ formatTime(msg.timestamp) }}</span>
@@ -147,8 +180,40 @@
           <form @submit.prevent="sendMessage" class="message-input">
             <input v-model="newMessage" placeholder="Введите сообщение..." required />
 
-            <button type="button" class="voice-button" @click="sendVoiceStub">
-              🎙
+            <button
+              type="button"
+              class="voice-button"
+              :class="{ recording: isRecording }"
+              @click="toggleVoiceRecording"
+              title="Голосовое сообщение"
+            >
+              <svg
+                v-if="!isRecording"
+                class="voice-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M5 10.5a7 7 0 0 0 14 0"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M12 17.5V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+
+              <span v-else class="record-dot"></span>
             </button>
 
             <button type="submit">Отправить</button>
@@ -179,16 +244,12 @@ const {
   messageMenu,
   toast,
 
-  connectWebSocket,
   sendMessage,
-  loadDialogs,
-  fetchMessages,
   searchUsers,
   selectUser,
   openMessageMenu,
   reportMessage,
   hideFraudAlert,
-  sendVoiceStub,
   logout,
   getColor,
   formatTime,
@@ -196,7 +257,12 @@ const {
   toggleDropdown,
   switchTab,
   blockUser,
-  clearChat
+  clearChat,
+
+  isRecording,
+  toggleVoiceRecording,
+  checkVoiceMessage,
+  toggleTranscript
 } = useChat()
 </script>
 

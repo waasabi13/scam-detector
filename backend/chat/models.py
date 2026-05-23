@@ -13,6 +13,7 @@ class Message(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     text = models.TextField(blank=True)
     audio = models.FileField(upload_to='voice_messages/', null=True, blank=True)
+    transcript = models.TextField(blank=True, default='')
     message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)

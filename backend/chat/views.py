@@ -6,6 +6,8 @@ from .models import Message, FraudReport
 from users.models import CustomUser
 from django.db.models import Q
 from detector.fraud_detector import FraudDetector
+from detector.speech_utils import transcribe_audio, clean_transcript
+from detector.fraud_detector import FraudDetector
 
 fraud_detector = FraudDetector()
 
@@ -108,19 +110,78 @@ def get_messages(request, user_id):
 
     response = []
     for m in messages:
-
         response.append({
             'id': m.id,
             'text': m.text,
             'timestamp': m.timestamp,
             'sender': m.sender.username,
             'isRead': m.is_read,
-            'is_fraud': m.is_fraud if m.recipient  != request.user else False,
-            'fraud_confidence': m.fraud_confidence if m.sender != request.user else None
+            'audio_url': request.build_absolute_uri(m.audio.url) if m.audio else None,
+            'message_type': m.message_type,
+            'transcript': m.transcript,
+            'is_fraud': m.is_fraud if m.recipient == request.user else False,
+            'fraud_confidence': m.fraud_confidence if m.recipient == request.user else None
         })
 
     return Response(response)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_voice_message(request, user_id):
+    recipient = get_object_or_404(CustomUser, id=user_id)
+    audio = request.FILES.get('audio')
+
+    if not audio:
+        return Response({'error': 'Audio file is required'}, status=400)
+
+    message = Message.objects.create(
+        sender=request.user,
+        recipient=recipient,
+        audio=audio,
+        text='Голосовое сообщение',
+        message_type='voice'
+    )
+
+    return Response({
+        'id': message.id,
+        'text': message.text,
+        'message_type': message.message_type,
+        'audio_url': request.build_absolute_uri(message.audio.url),
+        'timestamp': message.timestamp,
+        'sender': request.user.username,
+        'isRead': message.is_read,
+        'is_fraud': False,
+        'fraud_confidence': None,
+        'transcript': ''
+    })
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def check_voice_message(request, message_id):
+    message = get_object_or_404(Message, id=message_id)
+
+    if message.message_type != 'voice':
+        return Response({'error': 'Сообщение не является голосовым'}, status=400)
+
+    if not message.audio:
+        return Response({'error': 'У сообщения отсутствует аудиофайл'}, status=400)
+
+    transcript = transcribe_audio(message.audio.path)
+    cleaned_text = clean_transcript(transcript)
+
+    label, confidence = fraud_detector.classify_message(cleaned_text)
+
+    message.transcript = cleaned_text
+    message.is_fraud = label.lower().startswith("мошенничество")
+    message.fraud_confidence = round(confidence, 2)
+    message.save()
+
+    return Response({
+        'id': message.id,
+        'transcript': message.transcript,
+        'is_fraud': message.is_fraud,
+        'fraud_confidence': message.fraud_confidence,
+    })
 
 from .models import Message, FraudReport
 
