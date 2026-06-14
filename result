@@ -1,0 +1,91 @@
+C:\scam_detector\.venv\Scripts\python.exe C:\scam_detector\scripts\train_model.py
+=== Исходный датасет ===
+Всего сообщений: 1009
+label
+Не мошенничество    660
+Мошенничество       349
+Name: count, dtype: int64
+
+=== После балансировки ===
+Всего сообщений: 1320
+label
+Мошенничество       660
+Не мошенничество    660
+Name: count, dtype: int64
+
+=== После аугментации ===
+Всего сообщений: 1719
+label
+Мошенничество       1059
+Не мошенничество     660
+Name: count, dtype: int64
+
+=== Разделение выборки ===
+Train: 1375
+Test:  344
+
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████| 100/100 [00:00<00:00, 5000.06it/s]
+[transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-multilingual-cased
+Key                     | Status     |
+------------------------+------------+-
+vocab_projector.bias    | UNEXPECTED |
+vocab_layer_norm.bias   | UNEXPECTED |
+vocab_transform.weight  | UNEXPECTED |
+vocab_layer_norm.weight | UNEXPECTED |
+vocab_transform.bias    | UNEXPECTED |
+classifier.bias         | MISSING    |
+pre_classifier.weight   | MISSING    |
+pre_classifier.bias     | MISSING    |
+classifier.weight       | MISSING    |
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+=== Параметры обучения ===
+Модель: distilbert-base-multilingual-cased
+Device: cpu
+Epochs: 10
+Batch size: 16
+Learning rate: 2e-05
+Max sequence length: 128
+Total training steps: 860
+
+Epoch 1/10 | Training Loss: 0.3175
+Epoch 2/10 | Training Loss: 0.0615
+Epoch 3/10 | Training Loss: 0.0206
+Epoch 4/10 | Training Loss: 0.0057
+Epoch 5/10 | Training Loss: 0.0035
+Epoch 6/10 | Training Loss: 0.0018
+Epoch 7/10 | Training Loss: 0.0014
+Epoch 8/10 | Training Loss: 0.0012
+Epoch 9/10 | Training Loss: 0.0011
+Epoch 10/10 | Training Loss: 0.0010
+
+=== Результаты оценки модели ===
+Accuracy:  0.9913
+Precision: 1.0000
+Recall:    0.9858
+F1-score:  0.9929
+
+=== Матрица ошибок ===
+Строки — реальные классы, столбцы — предсказанные классы
+Классы: 0 — не мошенничество, 1 — мошенничество
+[[132   0]
+ [  3 209]]
+
+=== Classification Report ===
+                  precision    recall  f1-score   support
+
+Не мошенничество       0.98      1.00      0.99       132
+   Мошенничество       1.00      0.99      0.99       212
+
+        accuracy                           0.99       344
+       macro avg       0.99      0.99      0.99       344
+    weighted avg       0.99      0.99      0.99       344
+
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  1.55it/s]
+
+Модель и токенизатор сохранены в: C:\scam_detector\backend\detector\model\distilbert_model
+
+Process finished with exit code 0

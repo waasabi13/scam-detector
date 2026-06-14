@@ -20,7 +20,7 @@ const router = createRouter({
   routes,
 });
 
-// 🔐 Навигационный Guard
+// Навигационный Guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
 
