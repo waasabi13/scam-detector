@@ -177,8 +177,18 @@
             <button @click="reportMessage">Пожаловаться на сообщение</button>
           </div>
 
-          <form @submit.prevent="sendMessage" class="message-input">
-            <input v-model="newMessage" placeholder="Введите сообщение..." required />
+          <form @submit.prevent="handleSendMessage" class="message-input">
+            <textarea
+              ref="messageInputRef"
+              v-model="newMessage"
+              placeholder="Введите сообщение..."
+              rows="1"
+              class="message-textarea"
+              required
+              @input="autoResizeMessageInput"
+              @keydown.enter.exact.prevent="handleSendMessage"
+              @keydown.shift.enter.stop
+            ></textarea>
 
             <button
               type="button"
@@ -225,7 +235,10 @@
 </template>
 
 <script setup>
+import { nextTick, ref } from 'vue'
 import { useChat } from '../composables/useChat'
+
+const messageInputRef = ref(null)
 
 const {
   search,
@@ -264,6 +277,32 @@ const {
   checkVoiceMessage,
   toggleTranscript
 } = useChat()
+
+const autoResizeMessageInput = () => {
+  const textarea = messageInputRef.value
+
+  if (!textarea) return
+
+  textarea.style.height = 'auto'
+  textarea.style.height = `${textarea.scrollHeight}px`
+}
+
+const resetMessageInputHeight = async () => {
+  await nextTick()
+
+  const textarea = messageInputRef.value
+
+  if (!textarea) return
+
+  textarea.style.height = 'auto'
+}
+
+const handleSendMessage = async () => {
+  if (!newMessage.value.trim()) return
+
+  await sendMessage()
+  await resetMessageInputHeight()
+}
 </script>
 
 <style scoped src="../styles/chat.css"></style>

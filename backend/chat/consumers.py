@@ -41,8 +41,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def chat_message(self, event):
+        print("CHAT MESSAGE EVENT:", event)
+
         await self.send(text_data=json.dumps({
-            'message': event['message'],
-            'sender': event['sender'],
-            'is_fraud': event.get('is_fraud', False)
+            'id': event.get('id'),
+            'message': event.get('message'),
+            'sender': event.get('sender'),
+            'timestamp': event.get('timestamp'),
+            'is_fraud': event.get('is_fraud', False),
+            'fraud_confidence': event.get('fraud_confidence'),
+            'message_type': event.get('message_type', 'text'),
+            'audio_url': event.get('audio_url'),
+            'transcript': event.get('transcript', '')
         }))

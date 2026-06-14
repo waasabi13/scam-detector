@@ -8,6 +8,8 @@ from django.db.models import Q
 from detector.fraud_detector import FraudDetector
 from detector.speech_utils import transcribe_audio, clean_transcript
 from detector.fraud_detector import FraudDetector
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 fraud_detector = FraudDetector()
 
@@ -15,6 +17,7 @@ fraud_detector = FraudDetector()
 @permission_classes([IsAuthenticated])
 def send_message(request, user_id):
     text = request.data.get('text')
+
     if not text:
         return Response({'error': 'Empty message'}, status=400)
 
@@ -31,12 +34,41 @@ def send_message(request, user_id):
         fraud_confidence=confidence
     )
 
+    ids = sorted([request.user.id, recipient.id])
+    room_name = f'{ids[0]}_{ids[1]}'
+    room_group_name = f'chat_{room_name}'
+
+    print('SEND_MESSAGE GROUP:', room_group_name)
+
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        room_group_name,
+        {
+            'type': 'chat_message',
+            'id': message.id,
+            'message': message.text,
+            'sender': request.user.username,
+            'timestamp': message.timestamp.isoformat(),
+            'is_fraud': is_fraud,
+            'fraud_confidence': confidence,
+            'message_type': message.message_type,
+            'audio_url': None,
+            'transcript': message.transcript or ''
+        }
+    )
+
     return Response({
         'id': message.id,
         'text': message.text,
         'timestamp': message.timestamp,
-        'sender': request.user.username,  # <== ключевая строчка
+        'sender': request.user.username,
         'isRead': message.is_read,
+        'is_fraud': False,
+        'fraud_confidence': None,
+        'message_type': message.message_type,
+        'audio_url': None,
+        'transcript': message.transcript or ''
     })
 
 @api_view(['GET'])

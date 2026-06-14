@@ -68,44 +68,50 @@ export function useChat() {
   }
 
   const handleSocketMessage = async (data) => {
-    const isIncoming = data.sender !== currentUser.value.username
-    const messageId = data.id || Date.now()
+  const isIncoming = data.sender !== currentUser.value.username
 
-    messages.value.push({
-      id: messageId,
-      text: data.message,
-      isMine: !isIncoming,
-      timestamp: new Date().toISOString(),
-      is_fraud: Boolean(data.is_fraud) && isIncoming,
-      message_type: data.message_type || 'text',
-      audio_url: data.audio_url || null,
-      transcript: data.transcript || ''
-    })
-
-    if (Boolean(data.is_fraud) && isIncoming) {
-      const hiddenAlerts = getHiddenAlerts()
-
-      if (!hiddenAlerts[messageId]) {
-        showFraudAlert.value = true
-      }
-    }
-
-    if (isIncoming && selectedUser.value) {
-      const dialog = chatUsers.value.find(user => user.id === selectedUser.value.id)
-
-      if (dialog) {
-        dialog.unread_count = (dialog.unread_count || 0) + 1
-        chatUsers.value = [
-          dialog,
-          ...chatUsers.value.filter(user => user.id !== dialog.id)
-        ]
-      }
-    }
-
-    await nextTick()
-    scrollToBottom()
-    await loadDialogs()
+  if (!isIncoming) {
+    return
   }
+
+  const messageId = data.id || Date.now()
+
+  messages.value.push({
+    id: messageId,
+    text: data.message,
+    isMine: false,
+    timestamp: data.timestamp || new Date().toISOString(),
+    is_fraud: Boolean(data.is_fraud),
+    message_type: data.message_type || 'text',
+    audio_url: data.audio_url || null,
+    transcript: data.transcript || '',
+    showTranscript: false
+  })
+
+  if (Boolean(data.is_fraud)) {
+    const hiddenAlerts = getHiddenAlerts()
+
+    if (!hiddenAlerts[messageId]) {
+      showFraudAlert.value = true
+    }
+  }
+
+  if (selectedUser.value) {
+    const dialog = chatUsers.value.find(user => user.id === selectedUser.value.id)
+
+    if (dialog) {
+      dialog.unread_count = (dialog.unread_count || 0) + 1
+      chatUsers.value = [
+        dialog,
+        ...chatUsers.value.filter(user => user.id !== dialog.id)
+      ]
+    }
+  }
+
+  await nextTick()
+  scrollToBottom()
+  await loadDialogs()
+}
 
   const sendWebSocketMessage = (text) => {
     send({
@@ -115,22 +121,36 @@ export function useChat() {
   }
 
   const sendMessage = async () => {
-    if (!newMessage.value.trim() || !selectedUser.value) return
+  const text = newMessage.value.trim()
 
-    try {
-      await axios.post(`/messages/${selectedUser.value.id}/send/`, {
-        text: newMessage.value
-      })
+  if (!text || !selectedUser.value) return
 
-      sendWebSocketMessage(newMessage.value)
-      newMessage.value = ''
+  try {
+    const res = await axios.post(
+      `/messages/${selectedUser.value.id}/send/`,
+      { text }
+    )
 
-      await nextTick()
-      scrollToBottom()
-    } catch (err) {
-      console.error('Ошибка отправки сообщения', err)
-    }
+    messages.value.push({
+      ...res.data,
+      isMine: true,
+      message_type: 'text',
+      audio_url: null,
+      transcript: '',
+      showTranscript: false
+    })
+
+    newMessage.value = ''
+
+    await loadDialogs()
+
+    await nextTick()
+    scrollToBottom()
+
+  } catch (err) {
+    console.error('Ошибка отправки сообщения', err)
   }
+}
 
   const fetchMessages = async () => {
     if (!selectedUser.value) return
@@ -180,13 +200,18 @@ export function useChat() {
     }
   }
 
-  const selectUser = (user) => {
-    selectedUser.value = user
-    dropdownOpen.value = false
-    user.unread_count = 0
-    showFraudAlert.value = false
-    fetchMessages()
-    connectWebSocket()
+  const selectUser = async (user) => {
+    disconnect()
+
+      selectedUser.value = user
+      dropdownOpen.value = false
+
+      user.unread_count = 0
+      showFraudAlert.value = false
+
+      await fetchMessages()
+
+      connectWebSocket()
   }
 
   const openMessageMenu = (event, msg) => {
@@ -442,7 +467,7 @@ export function useChat() {
       if (!selectedUser.value) {
         loadDialogs()
       }
-    }, 10000)
+    }, 1000)
   })
 
   onBeforeUnmount(() => {

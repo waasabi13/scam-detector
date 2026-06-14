@@ -42,11 +42,6 @@ PROJECT_DIR = BASE_DIR.parent
 
 DATASET_PATH = PROJECT_DIR / "dataset" / "fraud_dataset.csv"
 
-# ВАЖНО:
-# старая рабочая модель остается в:
-# backend/detector/model/distilbert_model
-#
-# новая экспериментальная модель сохраняется отдельно:
 SAVE_PATH = (
     PROJECT_DIR
     / "backend"
@@ -563,16 +558,6 @@ print(f"Precision: {precision:.4f}")
 print(f"Recall:    {recall:.4f}")
 print(f"F1-score:  {f1:.4f}")
 
-print()
-print("=== Матрица ошибок ===")
-print("Строки — реальные классы, столбцы — предсказанные классы")
-print("Классы: 0 — не мошенничество, 1 — мошенничество")
-print(cm)
-
-print()
-print("=== Classification Report ===")
-print(report_text)
-
 
 # =========================
 # Сохранение графиков и отчётов
@@ -606,12 +591,3 @@ SAVE_PATH.mkdir(parents=True, exist_ok=True)
 
 model.save_pretrained(SAVE_PATH)
 tokenizer.save_pretrained(SAVE_PATH)
-
-
-print()
-print(f"Модель и токенизатор сохранены в: {SAVE_PATH}")
-print(f"График Loss сохранён: {loss_path}")
-print(f"График Accuracy сохранён: {accuracy_path}")
-print(f"Матрица ошибок сохранена: {cm_path}")
-print(f"Таблица метрик сохранена: {metrics_path}")
-print(f"Отчёт сохранён: {report_path}")
